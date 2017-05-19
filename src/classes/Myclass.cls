@@ -29,7 +29,6 @@ public with sharing class Myclass {
       System.debug('Dev Code');
        System.debug(' QA Code Fix');
 
-
         System.debug(' Dev2 Changes');
          System.debug(' Prabhanjan Changes');
 
@@ -39,6 +38,11 @@ public with sharing class Myclass {
  System.debug(' Dev 11 Jasmine Comment');
 
 
+        System.debug(' Dev2 Changes');
+         System.debug(' Prabhanjan Changes');
+
+        System.debug(' Dev 1 Changes');
+         System.debug(' Dev 11 Changes');
 
 
     }

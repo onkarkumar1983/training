@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 (hidden)
 =======
 /*
@@ -14,3 +15,6 @@ global class QuizRedirector_Test {
     }
 }
 >>>>>>> refs/heads/develop
+=======
+(hidden)
+>>>>>>> refs/heads/master
