@@ -1,0 +1,47 @@
+<apex:page controller="importDataFromCSVController">
+<apex:stylesheet value="{!URLFOR($Resource.bootstrapsfdc, '/bootstrapSfdc/css/SFDCbootstrap.css')}"/>
+<div class="bootstrap-sfdc">
+
+<div class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Modal title</h4>
+      </div>
+      <div class="modal-body">
+        <p>One fine body&hellip;</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary">Save changes</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+</div>
+<apex:sectionHeader title="Mass Upload" subtitle="CSV Upload"/>
+    <apex:form >
+        <apex:pagemessages />
+        <apex:pageBlock >
+            <apex:pageBlockSection columns="4"> 
+                  <apex:inputFile value="{!csvFileBody}"  filename="{!csvAsString}"/>
+                  <apex:commandButton value="Import Account" action="{!importCSVFile}"/>
+                  <apex:commandButton value="Map Fields" action="{!mapFields}" reRender="fld"/>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+         <apex:repeat value="{!csvHeader11}" var="obj" id="fld">
+        {!obj}
+        </apex:repeat>
+        <apex:pageBlock >
+       
+           <apex:pageblocktable value="{!accList}" var="acc">
+              <apex:column value="{!acc.name}" />
+              <apex:column value="{!acc.AccountNumber}" />
+              <apex:column value="{!acc.Type}" />
+              <apex:column value="{!acc.Accountsource}" />
+              <apex:column value="{!acc.Industry }" />
+        </apex:pageblocktable>
+     </apex:pageBlock>
+   </apex:form>
+</apex:page>

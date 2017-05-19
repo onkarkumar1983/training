@@ -1,0 +1,105 @@
+<apex:page controller="scanbizcards.CBRecordTypeCtlr" sidebar="false" showHeader="false" docType="html-5.0">
+<script type="text/javascript" src="{!URLFOR($Resource.ScanBizCardsPackage, 'jquery-1.10.2.min.js')}"></script>
+<script>
+    $j = jQuery.noConflict();
+    var listOfDropdown = new Array();
+    var listOfDropdownStr = '';
+    var depDropdownlist = {};
+    var manual = true;
+
+    $j(document).ready(function(){
+        console.log('start processing...');
+        deleteOldOnesCont();
+
+        $j(window).on("beforeunload", function() {
+            if (manual) return "The record type drop downs are still processing. Are you sure you want to leave?"; 
+            
+            return;
+        });
+    });
+
+    function process() {
+        console.log('checking for next one...');
+        if ($j('.processed').text() === 'false') {
+            processRecordType();
+        } else {
+            console.log('stop!!');
+            manual = false;
+            window.opener.location.reload(false);
+            window.close();
+        }
+    }
+    
+    function recheck() {
+       var totalCount = $j('.totalCount').text();
+       console.log(totalCount);
+        if (totalCount > 9000) {
+            deleteOldOnesCont();
+        } else {
+            deleteOldOnes();
+        }
+    }
+    
+    function processRecordType() {
+       depDropdownlist = {};
+       var recordTypeId = $j('.recordTypeId').text();  
+       console.log('processing ' + recordTypeId);
+       mainProcessRecordType().done(function() {
+        console.log('fetching the new recordtype');
+        updateRecordTypeMapping();
+       });
+    }    
+       
+    function mainProcessRecordType() {
+        var mainDeferred = $j.Deferred();
+
+        window.setTimeout(function() {
+            var recordTypeId = $j('.recordTypeId').text();     
+            console.log('{!$Page.SBRecordTypeProcessorSingle}?recordTypeId='+recordTypeId);
+            $j('#iframeHolder').empty();
+            $j('<iframe>', {
+                src: '{!$Page.SBRecordTypeProcessorSingle}?recordTypeId='+recordTypeId,
+                id:  'myFrame',
+                frameborder: 0
+                }).appendTo('#iframeHolder');
+           
+           depDropdownlist[recordTypeId] = mainDeferred;
+        }, 500);
+        
+        return mainDeferred.promise();
+    }
+    
+    function completedRecordType(recordTypeId) {
+        console.log('got the messsage');
+        depDropdownlist[recordTypeId].resolve();
+    }
+</script>
+<style>
+    select {
+        white-space-collapse: preserve;
+        white-space: pre;
+    }
+</style>
+<apex:form >
+    <apex:actionFunction name="updateRecordTypeMapping" action="{!insertRecordTypeDropdownsPerRT}" reRender="recordType" oncomplete="process();" immediate="true">
+        <apex:param name="firstParam" assignTo="{!jsonStr}" value="" />
+    </apex:actionFunction>
+
+    <apex:actionFunction name="deleteOldOnesCont" action="{!deleteOldDropdownRecords}" oncomplete="recheck();" reRender="totalCount" />
+    <apex:actionFunction name="deleteOldOnes" action="{!deleteOldDropdownRecords}" oncomplete="saveRecordType();" />
+    <apex:actionFunction name="saveRecordType" action="{!insertRecordTypes}" oncomplete="processRecordType();" />
+    
+    <apex:outputPanel id="totalCount">
+        <apex:outputText value="{!totalCount}" style="visibility:hidden;" styleClass="totalCount" />
+         <apex:pageMessages />
+    </apex:outputPanel>
+    
+    <apex:outputPanel id="recordType">
+        <div style="border-bottom:1px black solid; font-size:20px; margin-bottom:10px;"><apex:outputText value="{!objectType}" /> Record Type</div>
+        <div style="font-size:15px;">Record Type Name - <apex:outputText value="{!currentRecordType.Name}"  /> <img src="{!$Resource.AnimatedSpinner}" /> processing...</div>
+        <apex:outputText styleClass="processed" value="{!processed}" style="font-size:20px;display:none;" /><br/>
+        <apex:outputText styleClass="recordTypeId" value="{!currentRecordType.id}" style="font-size:20px;display:none;"/><br/>   
+    </apex:outputPanel>
+    <div id="iframeHolder" style="visibility:hidden;"></div>
+</apex:form>
+</apex:page>

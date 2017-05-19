@@ -1,0 +1,23 @@
+<apex:page sidebar="true">
+
+<apex:stylesheet value="{!URLFOR($Resource.bootstrapsfdc, '/bootstrapSfdc/css/SFDCbootstrap.css')}"/>
+<style>
+    .scroll {
+    background-color: #00FFFF;
+    height: 100%;
+    overflow: scroll;
+}
+</style>
+<div class="bootstrap-sfdc" style=" background-color: #fff;margin-top: 10px;">
+<div class="row">
+  <div class="col-xs-12 col-md-8">.col-xs-12 .col-md-8</div>
+  <div class="col-xs-6 col-md-4">.col-xs-6 .col-md-4</div>
+</div>
+<div class="row" style="background-color:black">
+<div class="col-md-3">
+<div class="scroll">You can use the overflow property when you want to have better control of the layout. The default value is visible.</div>
+</div>
+<div class="col-md-7" style="background-color:black">.col-md-4</div>
+</div>
+</div>
+</apex:page>

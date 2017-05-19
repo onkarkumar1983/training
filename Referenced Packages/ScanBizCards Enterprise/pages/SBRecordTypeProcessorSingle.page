@@ -1,0 +1,158 @@
+<apex:page controller="scanbizcards.CBSingleRecordTypeCtlr" sidebar="false" showHeader="false" docType="html-5.0">
+<script type="text/javascript" src="{!URLFOR($Resource.ScanBizCardsPackage, 'jquery-1.10.2.min.js')}"></script>
+<script>
+    $j = jQuery.noConflict();
+    var listOfDropdown = new Array();
+    var listOfDropdownStr = '';
+    var depDropdownlist = {};
+    var manual = true;
+
+    $j(document).ready(function(){
+        console.log('start single record type processing...');
+        readDropdowns();
+    });
+    
+    function readDropdowns() {
+        console.log('processing the drop downs');
+        listOfDropdownStr = '';
+        listOfDropdown = new Array();
+        $j('select[class*="_dropdown_object_"]').each(function () {
+            var dropdownInfo = $j(this).attr('class');
+            dropdownInfo = dropdownInfo.split('_dropdown_object_');
+            
+            if (dropdownInfo) {
+                var name = dropdownInfo[0];
+                var field = dropdownInfo[1];
+                var selectOptions = this.options;
+                var list = '';
+                
+                for (var i = 0; i < this.length; i++) {
+                    var label = selectOptions[i].value;
+                
+                    if (label && label !== '--None--') {
+                        if (list.length === 0) {
+                            list = label;
+                        }
+                    
+                        if (list.indexOf(label) == -1) {
+                            list += '|' + label;
+                        }
+                    }
+                }
+                
+                var fieldInfo = {
+                    recordTypeId: name,
+                    fieldName: field,
+                    values: list
+                };
+                
+                
+                if (listOfDropdown[name + field]) {
+                    if(listOfDropdown[name + field].values.length < list) {
+                        listOfDropdown[name + field] = (fieldInfo);
+                    }
+                } else {
+                    listOfDropdown[name + field] = (fieldInfo);
+                }
+            }
+        });
+    
+        var myFilterList = new Array();
+        for (var field in listOfDropdown) {
+            if (listOfDropdown[field].fieldName) {
+                myFilterList.push(listOfDropdown[field]);
+            }
+        }
+        for (var recType in myFilterList) {
+            listOfDropdownStr += myFilterList[recType].recordTypeId + '###' + myFilterList[recType].fieldName + '###' + myFilterList[recType].values + '\n';
+        }
+        
+        //console.log('processing ' + myFilterList[0].recordTypeId);
+        processDepDropdowns().done(function() {
+            updateRecordTypeMapping(listOfDropdownStr);
+        });
+    }
+    
+    function process() {
+        console.log('completed the dep...');
+        console.log('sending msg');
+        window.parent.completedRecordType('{!$CurrentPage.parameters.recordTypeId}');
+    }
+    
+    
+    function processDepDropdowns() {
+        var mainDeferred = $j.Deferred();
+        depDropdownlist = {};
+        
+        var dfd = $j.Deferred(), dfdNext = dfd;
+        dfd.resolve();
+        var objType = $j('.objectType').text();
+        
+        if (objType === 'PersonAccount') {
+            mainDeferred.resolve();
+        } else {
+            $j.each($j('.depDropdownList').text().split(','), function(index, value) {
+                dfdNext = dfdNext.pipe(function () {
+                    return processDepDropdown(value).done();
+                });
+            });
+            
+            $j.when(dfd, dfdNext).done(function() {
+                mainDeferred.resolve();
+            });
+        }
+        
+        return mainDeferred.promise();
+    }    
+       
+    function processDepDropdown(dropdownId) {
+        var mainDeferred = $j.Deferred();
+        
+        window.setTimeout(function() {
+            var objType = $j('.objectType').text();
+            var recordTypeId = $j('.recordTypeId').text();     
+            console.log('{!$Page.SBRecordTypeDependencyCtlr}?recordTypeId='+recordTypeId+'&object='+objType+'&fieldName='+dropdownId);
+            $j('#iframeHolder').empty();
+            $j('<iframe>', {
+                src: '{!$Page.SBRecordTypeDependencyCtlr}?recordTypeId='+recordTypeId+'&object='+objType+'&fieldName='+dropdownId,
+                id:  'myFrame',
+                frameborder: 0
+                }).appendTo('#iframeHolder');
+           
+           depDropdownlist[objType + recordTypeId + dropdownId] = mainDeferred;
+        }, 500);
+        
+        return mainDeferred.promise();
+    }
+    
+    function completedDep(recordTypeId, objectName, fieldID) {
+        console.log('got the messsage');
+        depDropdownlist[objectName + recordTypeId + fieldID].resolve();
+    }
+</script>
+<style>
+    select {
+        white-space-collapse: preserve;
+        white-space: pre;
+    }
+</style>
+<apex:form >
+    <apex:actionFunction name="updateRecordTypeMapping" action="{!insertRecordTypeDropdownsPerRT}" oncomplete="process();" immediate="true">
+        <apex:param name="firstParam" assignTo="{!jsonStr}" value="" />
+    </apex:actionFunction>
+    
+    <apex:outputText styleClass="depDropdownList" value="{!depDropdownList}" style="font-size:20px;"/><br/>
+    <apex:outputText styleClass="objectType" value="{!objectType}" style="font-size:20px;"/><br/>
+    <apex:outputText styleClass="recordTypeId" value="{!currentRecordType.scanbizcards__Record_Type_Id__c}" style="font-size:20px;"/><br/>
+    
+    <apex:outputPanel id="recordType">
+        <apex:repeat value="{!dropdownList}" var="field">
+            <apex:outputText value="{!field}"/><br/>
+            <apex:inputField style="white-space-collapse: preserve;white-space: pre;" 
+                             styleClass="{!currentRecordType.scanbizcards__Record_Type_Id__c}_dropdown_object_{!field}" 
+                             value="{!obj[field]}"/><br/>
+        </apex:repeat>
+    </apex:outputPanel>
+    <div id="iframeHolder" style="display:none1;"></div>
+</apex:form>
+</apex:page>

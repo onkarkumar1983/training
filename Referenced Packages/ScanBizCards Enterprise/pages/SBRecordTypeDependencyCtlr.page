@@ -1,0 +1,312 @@
+<apex:page controller="scanbizcards.CBDependencyCtlr" sidebar="false" showHeader="false">
+<script type="text/javascript" src="{!URLFOR($Resource.ScanBizCardsPackage, 'jquery-1.10.2.min.js')}"></script>
+<script>
+    $j = jQuery.noConflict();
+    var depDropdownlist = {};
+
+    $j(document).ready(function(){
+        console.log('start processing...');
+        setTimeout(function() {
+            readDependencyDropdown();
+        }, 500);
+        $j(window).on("beforeunload", function() {
+            return;
+        });
+    });
+    
+    function mainDepProcessor(parentDep, listOfParentDropdowns, listOfParentDropdownClasses) {
+        var mainDeferred = $j.Deferred();
+    
+        var dfd = $j.Deferred(), dfdNext = dfd;
+        dfd.resolve();
+        
+        var items = depDropdownlist[parentDep];
+        if (items.length > 0) {
+            var currDep = items[0].class;
+            
+            listOfParentDropdownClasses.push(currDep);
+            
+            depDropdownlist[currDep] = [];
+            var curDropdown = $j('.' + currDep).find('select')[0];
+            listOfParentDropdowns.push(curDropdown);
+            
+            $j.each(items, function(index, value) {
+                var values = value.controllingValue.split('|');
+
+                var setup = function() {
+                    for (var i=0; i < listOfParentDropdowns.length; i++) {
+                        var curValue = values[i];
+                        var curElement = $j('[id="' + $j(listOfParentDropdowns[i]).attr('id') + '"]');
+                    
+                        if (curElement.is(':checkbox')) {
+                            if (curValue === 'not checked' && curElement.is(":checked")) {
+                                curElement.click();
+                            } else if (curValue === 'checked' && !curElement.is(":checked")) {
+                                curElement.click();
+                            }
+                        } else {
+                            if (typeof curValue !== 'undefined') {
+                                curElement.val(curValue);
+                                curElement.trigger('change');
+                                curElement.mouseup();
+                                curElement.mousedown();
+                            }
+                        }
+                    }
+                };
+                
+                dfdNext = dfdNext.pipe(function () {
+                    return processDepDropdowns(curDropdown, currDep, setup, listOfParentDropdownClasses, values, false).done();
+                });
+            });
+            
+            $j.when(dfd, dfdNext).done(function() {
+                mainDeferred.resolve({status:'more', parentDep: currDep, listOfParentDropDowns: listOfParentDropdowns, listOfParentDropdownClasses: listOfParentDropdownClasses});
+            });
+        } else {
+            mainDeferred.resolve({status:'none'});
+            console.log(depDropdownlist);
+            updateDepRecordTypeMapping(JSON.stringify(depDropdownlist));
+        }
+        
+        return mainDeferred.promise();
+    }
+    
+    function readDependencyDropdown() {
+        var parentDep;
+        var defList = [];
+        var dropdown;
+        
+        $j('select').each(function() {
+            var deferred = $j.Deferred();
+            defList.push(deferred);
+
+            if ($j(this).find('option').length > 1) {
+                dropdown = this;
+                console.log('dep Processing');
+                parentDep = $j(dropdown).attr('class');
+                
+                if (parentDep) {
+                    depDropdownlist[parentDep] = [];
+                }
+            }
+            deferred.resolve();
+        });
+        
+        $j.when(defList).done(function() {
+            var checkbox = false;
+            
+            if (!parentDep) {
+                console.log('check box...');
+                dropdown = $j('input[type="checkbox"]');
+                parentDep = $j(dropdown).attr('class');
+                depDropdownlist[parentDep] = [];
+                checkbox = true;
+            }
+                
+            // Level 1...
+            console.log('level 1 processing...');
+            processDepDropdowns(dropdown, parentDep, null, [parentDep], [], checkbox).done(function() {
+                // level 2...
+                console.log('level 2 processing...');
+                mainDepProcessor(parentDep, [dropdown], [parentDep]).done(function(content) {
+                    if (content.status === 'more') {
+                        // level 3...
+                        console.log('level 3 processing...');
+                        mainDepProcessor(content.parentDep, content.listOfParentDropDowns, content.listOfParentDropdownClasses, false).done(function(content) {
+                            if (content.status === 'more') {
+                                // level 4...
+                                console.log('level 4 processing...');
+                                mainDepProcessor(content.parentDep, content.listOfParentDropDowns, content.listOfParentDropdownClasses, false).done(function(content) {
+                                    if (content.status === 'more') {
+                                        // level 5...
+                                        console.log('level 5 processing...');
+                                        mainDepProcessor(content.parentDep, content.listOfParentDropDowns, content.listOfParentDropdownClasses, false).done(function(content) {
+                                            if (content.status === 'more') {
+                                                // level 6...
+                                                console.log('level 6 processing...');
+                                                mainDepProcessor(content.parentDep, content.listOfParentDropDowns, content.listOfParentDropdownClasses, false).done(function(content) {
+                                                    if (content.status === 'more') {
+                                                        // level 7...
+                                                        console.log('level 7 processing...');
+                                                        mainDepProcessor(content.parentDep, content.listOfParentDropDowns, content.listOfParentDropdownClasses, false).done(function(content) {
+                                                            if (content.status === 'more') {
+                                                                // level 8...
+                                                                console.log('level 8 processing...');
+                                                                mainDepProcessor(content.parentDep, content.listOfParentDropDowns, content.listOfParentDropdownClasses, false).done(function(content) {
+                                                                    if (content.status === 'more') {
+                                                                        // level 9...
+                                                                        console.log('level 9 processing...');
+                                                                        mainDepProcessor(content.parentDep, content.listOfParentDropDowns, content.listOfParentDropdownClasses, false).done(function(content) {
+                                                                            if (content.status === 'more') {
+                                                                                // level 10...
+                                                                                console.log('level 10 processing...');
+                                                                                mainDepProcessor(content.parentDep, content.listOfParentDropDowns, content.listOfParentDropdownClasses, false).done(function(content) {
+                                                                                    updateDepRecordTypeMapping(JSON.stringify(depDropdownlist));
+                                                                                 
+                                                                                });
+                                                                            }
+                                                                        });
+                                                                    }
+                                                                });
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    }
+    
+    function processDepDropdowns (dropdown, parentDep, setup, excludes, previousValues, checkbox) {
+        if (setup !== null) {
+            setup();
+        }
+        
+        var deferred = $j.Deferred();
+        var dfd = $j.Deferred(), dfdNext = dfd;
+        dfd.resolve();
+        if (checkbox) {
+            $j.each(['checked', 'not checked'], function(index, value) {
+                var that = value;
+                dfdNext = dfdNext.pipe(function () {
+                    return processSingleDropdown(dropdown, that, parentDep, excludes, previousValues, checkbox).done();
+                });
+            });
+        }
+        else {
+            $j('[id="' + $j(dropdown).attr('id') + '"]').find('option').each(function() {
+                var that = this;
+                dfdNext = dfdNext.pipe(function () {
+                    return processSingleDropdown(dropdown, that, parentDep, excludes, previousValues).done();
+                });
+            });
+        }
+
+        $j.when(dfd, dfdNext).done(function() {
+            deferred.resolve();
+        });
+        return deferred.promise();
+    }
+    
+    
+    function processSingleDropdown (dropdown, value, parentDep, excludes, previousValues, checkbox) {
+        var currentDef = $j.Deferred();
+        var selectClass = $j(dropdown).attr('class');
+        
+        if (typeof selectClass === 'undefined') {
+            selectClass = $j(dropdown).parent().parent().attr('class');
+        }
+        
+        if (checkbox) {
+            if (value=== 'not checked' && $j(dropdown).is(":checked")) {
+                $j('[id="' + $j(dropdown).attr('id') + '"]').click();
+            } else if (value=== 'checked' && !$j(dropdown).is(":checked")) {
+                $j('[id="' + $j(dropdown).attr('id') + '"]').click();
+            }
+        } else {
+            $j('[id="' + $j(dropdown).attr('id') + '"]').val(value.value);
+            $j('[id="' + $j(dropdown).attr('id') + '"]').trigger('change');
+            $j('[id="' + $j(dropdown).attr('id') + '"]').mouseup();
+            $j('[id="' + $j(dropdown).attr('id') + '"]').mousedown();
+        }
+        
+        setTimeout(function() {
+        $j('select').not(function() {
+            for (var i = 0; i < excludes.length; i++) {
+                var class1 = $j(this).parent().parent().attr('class');
+                var class2 = excludes[i];
+                
+                if (class1 === class2) {
+                    return true;
+                }
+                
+                if ($j(this).is(':disabled')) {
+                    return true;
+                }
+            }
+
+            return false;
+        }).each(function() {
+            var multi = false;
+        
+            if (typeof this.attributes['multiple'] === 'undefined') {
+                var newSelectClass = $j(this).parent().parent().attr('class');
+            } else {
+                var newSelectClass = $j(this).parent().parent().parent().parent().parent().parent().attr('class');
+                multi = true;
+            }
+            
+            var selectSize = $j(this).find('option').length;
+            if (typeof newSelectClass !== 'undefined' && value.value !== '' && parentDep !== newSelectClass && selectSize >= 1) {
+                var dependObj = {};
+                dependObj.controllingClass = excludes.join('|');
+                
+                if (checkbox) {
+                    dependObj.controllingValue = (previousValues.length != 0 ? previousValues.join('|') + '|' : '') + value;
+                } else {
+                    dependObj.controllingValue = (previousValues.length != 0 ? previousValues.join('|') + '|' : '') + value.value;
+                }
+                dependObj.class = newSelectClass;
+                dependObj.value = '';
+                
+                for (i = 0; i < this.length; i++) {
+                    var curvalueStr = this.options[i].value;
+                    if (multi) {
+                        curvalueStr = this.options[i].label;
+                    }
+                
+                    if (dependObj.value === '') {
+                        dependObj.value = curvalueStr;
+                    } else {
+                        dependObj.value += '|' + curvalueStr;
+                    }                           
+                }
+                
+                depDropdownlist[parentDep].push(dependObj);
+            }
+            
+        }).promise().done(function () {
+            currentDef.resolve();
+        });
+        }, 1500);
+
+        
+        return currentDef.promise();
+    }
+    
+    function completed() {
+        console.log('completed the dep...');
+        console.log('sending msg');
+        window.parent.completedDep('{!$CurrentPage.parameters.recordTypeId}', '{!$CurrentPage.parameters.object}', '{!$CurrentPage.parameters.fieldName}');
+    }
+</script>
+<apex:form >
+    <apex:actionFunction name="updateDepRecordTypeMapping" action="{!insertDepDropdowns}" reRender="recordType,totalCount" oncomplete="completed();" immediate="true">
+        <apex:param name="firstParam" assignTo="{!jsonStr}" value="" />
+    </apex:actionFunction>
+    
+    <apex:outputPanel id="recordType">
+        <apex:outputPanel >
+            <apex:variable var="counter" value="{!1}" /> 
+            <apex:repeat value="{!dependDropdownList}" var="field">
+               {!field.counter}<br/>
+               {!field.controllingField} <apex:inputField style="white-space-collapse: preserve" styleClass="{!field.controllingField}" 
+               value="{!obj[field.controllingField]}"
+               rendered="{!dependDropdownList.size == counter}" /><br/>
+                <div class="{!field.nameFld}">
+                    {!field.nameFld}<apex:inputField style="white-space-collapse: preserve" value="{!obj[field.nameFld]}"/>
+                </div>
+               <apex:variable var="counter" value="{!counter+1}"/>
+            </apex:repeat>
+        </apex:outputPanel>
+    </apex:outputPanel>
+</apex:form>
+</apex:page>
